@@ -1,0 +1,28 @@
+name: nebula-server-ci
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  id-token: write
+env:
+  IMG: us-central1-docker.pkg.dev/project-233c64cb-03e8-4cfc-932/nebula/nebula-server
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Pruebas
+        run: pip install -r requirements.txt pytest && pytest -q
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/366684244274/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@project-233c64cb-03e8-4cfc-932.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Construir y publicar imagen
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+          docker build -t $IMG:${{ github.sha }} .
+          docker push $IMG:${{ github.sha }}

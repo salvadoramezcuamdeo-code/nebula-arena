@@ -1,0 +1,24 @@
+apiVersion: agones.dev/v1
+kind: Fleet
+metadata:
+  name: nebula-fleet
+spec:
+  replicas: 3
+  template:
+    spec:
+      ports:
+        - name: game
+          containerPort: 7654
+          protocol: TCP          # WebSocket viaja sobre TCP
+      health: { initialDelaySeconds: 10, periodSeconds: 5 }
+      template:
+        spec:
+          containers:
+            - name: nebula
+              image: us-central1-docker.pkg.dev/project-233c64cb-03e8-4cfc-932/nebula/nebula-server:1.0
+              ports:
+                - name: metrics    # lo leerá Prometheus en la práctica 3.4
+                  containerPort: 9100
+              resources:
+                requests: { cpu: "250m", memory: "256Mi" }
+                limits: { cpu: "500m", memory: "512Mi" }
